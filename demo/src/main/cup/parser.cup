@@ -1,0 +1,24 @@
+package com.compiler;
+
+import java_cup.runtime.*;
+
+class Parser;
+
+/** simbolos terminales **/
+
+terminal PLUS, TIMES, LPAREN, RPAREN;
+terminal Integer NUMBER;
+
+/** simbolos terminales **/
+
+non terminal Integer expr;
+
+precedence left PLUS;
+precedence left TIMES;
+
+start with expr;
+
+expr ::=  expr:e1 PLUS expr:e2  {: RESULT = e1 + e2; :}
+       |  expr:e1 TIMES expr:e2 {: RESULT = e1 * e2; :}
+       |  LPAREN expr:e RPAREN  {: RESULT = e;       :}
+       |  NUMBER:n              {: RESULT = n;       :};      
