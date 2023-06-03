@@ -1,24 +1,72 @@
 package com.compiler;
 
 import java_cup.runtime.*;
+import java.util.HashMap;
+import java.util.LinkedList;
 
 class Parser;
 
+parser code {:
+    // define the symbol table
+       HashMap<String, Object> symbolTable = new HashMap<String, Object>();
+
+       // method to add a new identifier to the symbol table
+       public void addSymbol(String id, Object value) {
+              symbolTable.put(id, value);
+       }
+
+       // method to check if an identifier is in the symbol table
+       public boolean symbolExists(String id) {
+              return symbolTable.containsKey(id);
+       }
+
+       // method to get the value of a symbol
+       public Object getSymbolValue(String id) {
+              return symbolTable.get(id);
+       }
+
+       public void report_error(String message, Object info) {
+              StringBuilder m = new StringBuilder("Syntax error");
+              if (info instanceof java_cup.runtime.ParserSym) {
+              java_cup.runtime.ParserSym s = (java_cup.runtime.ParserSym) info;
+              if (s.left >= 0) {
+                     m.append(" in line "+ (s.left+1));
+                     if (s.right >= 0)
+                     m.append(", column "+ (s.right+1));
+              }
+              m.append(": "+message);
+              }
+              System.err.println(m);
+       }
+
+:};
+
+
+
 /** simbolos terminales **/
 
-terminal PLUS, TIMES, LPAREN, RPAREN;
-terminal Integer NUMBER;
+terminal             IF, ELSE, WHILE, FOR, INT, RETURN, FLOAT, BOOL, CHAR, STRING, ELIF, DO, READ, PRINT, MAIN, TRUE, BREAK, FALSE;
+terminal             SEMICOLON, LPAREN, RPAREN, LBRACE, RBRACE, LBRACKET, RBRACKET;
+terminal             PLUS, MINUS, MUL, DIV, EQ, EQEQ, LESS_THAN, LESS_THAN_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, NOT_EQUAL, AND, OR;
+terminal             INCREMENT, DECREMENT, POWER, MODULO, DOLAR, NOT;
+terminal             IDENTIFIER, INTEGER_LITERAL, FLOAT_LITERAL, CHAR_LITERAL, STRING_LITERAL;
 
-/** simbolos terminales **/
+/** simbolos no terminales **/
 
-non terminal Integer expr;
+
+non terminal         Program;
+non terminal List    StatementList;
+non terminal         Statement;
+
+non terminal expr;
 
 precedence left PLUS;
-precedence left TIMES;
+precedence left MUL;
 
 start with expr;
 
-expr ::=  expr:e1 PLUS expr:e2  {: RESULT = e1 + e2; :}
-       |  expr:e1 TIMES expr:e2 {: RESULT = e1 * e2; :}
-       |  LPAREN expr:e RPAREN  {: RESULT = e;       :}
-       |  NUMBER:n              {: RESULT = n;       :};      
+expr ::=  expr PLUS expr
+       |  expr MUL expr 
+       |  LPAREN expr RPAREN  
+       |  INTEGER_LITERAL ;     
+

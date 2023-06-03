@@ -14,7 +14,7 @@ public class ParserTest
     String expresion ="2*4+6*3";
     Lexer lexer = new Lexer(new StringReader(expresion) );
     Parser p = new Parser(lexer);
-    Integer resultado = (Integer) p.parse().value;
+    String resultado = (String) p.parse().value;
     System.out.println(resultado);
   }
 }
