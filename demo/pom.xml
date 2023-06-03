@@ -37,17 +37,10 @@
       <version>4.7.3</version>
   </dependency>
   
-    <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-compiler</artifactId>
-      <version>2.13.0</version>
-    </dependency>
   </dependencies>
 
   <build>
       <sourceDirectory>${basedir}/target/generated-sources/cup</sourceDirectory>
-
-    <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
       <plugins>
         <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
         <plugin>
@@ -89,9 +82,7 @@
           <version>3.0.0</version>
         </plugin>
        
-      </plugins>
-    </pluginManagement>
-    <plugins>
+
      <plugin>
         <groupId>de.jflex</groupId>
         <artifactId>jflex-maven-plugin</artifactId>
@@ -145,23 +136,27 @@
         
       </plugin>
       <plugin>
-    <groupId>org.codehaus.mojo</groupId>
-    <artifactId>build-helper-maven-plugin</artifactId>
-    <version>3.0.0</version>
-    <executions>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
         <execution>
+            <id>add-source</id>
             <phase>generate-sources</phase>
             <goals>
-                <goal>add-source</goal>
+              <goal>add-source</goal>
             </goals>
             <configuration>
-                <sources>
-                    <source>src/main/java</source>
-                </sources>
+              <sources>
+                <source>src/main/java</source>
+
+              </sources>
             </configuration>
-        </execution>
-    </executions>
-</plugin>
+             </execution>
+        </executions>
+     </plugin>
+        
+  
     </plugins>
 
   </build>

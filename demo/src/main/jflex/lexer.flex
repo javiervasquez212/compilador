@@ -116,6 +116,7 @@ CommentContent       = ( [^*] | \*+ [^/*] )*
 
     /* whitespace */
     {WhiteSpace}      { /* ignore whitespace */ }
+    {Comment}         { /* ignore Comments */ }
 }
 
 <COMMENT> {

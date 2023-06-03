@@ -1,4 +1,5 @@
 package com.compiler;
+import java.util.List;
 
 import java_cup.runtime.*;
 import java.util.HashMap;
@@ -8,31 +9,16 @@ class Parser;
 
 parser code {:
     // define the symbol table
-       HashMap<String, Object> symbolTable = new HashMap<String, Object>();
-
-       // method to add a new identifier to the symbol table
-       public void addSymbol(String id, Object value) {
-              symbolTable.put(id, value);
-       }
-
-       // method to check if an identifier is in the symbol table
-       public boolean symbolExists(String id) {
-              return symbolTable.containsKey(id);
-       }
-
-       // method to get the value of a symbol
-       public Object getSymbolValue(String id) {
-              return symbolTable.get(id);
-       }
+       private SymbolTable symbolTable = new SymbolTable();
 
        public void report_error(String message, Object info) {
-              StringBuilder m = new StringBuilder("Syntax error");
-              if (info instanceof java_cup.runtime.ParserSym) {
-              java_cup.runtime.ParserSym s = (java_cup.runtime.ParserSym) info;
+              StringBuilder m = new StringBuilder("Error de sintaxis");
+              if (info instanceof java_cup.runtime.Symbol) {
+              java_cup.runtime.Symbol s = (java_cup.runtime.Symbol) info;
               if (s.left >= 0) {
-                     m.append(" in line "+ (s.left+1));
+                     m.append(" en la línea "+ (s.left+1));
                      if (s.right >= 0)
-                     m.append(", column "+ (s.right+1));
+                     m.append(", columna "+ (s.right+1));
               }
               m.append(": "+message);
               }
@@ -54,19 +40,51 @@ terminal             IDENTIFIER, INTEGER_LITERAL, FLOAT_LITERAL, CHAR_LITERAL, S
 /** simbolos no terminales **/
 
 
-non terminal         Program;
+non terminal         Program, Main, Functions, Function ;
+non terminal         Type ;
+
+//Statements
 non terminal List    StatementList;
 non terminal         Statement;
+non terminal         Declaration;
 
-non terminal expr;
+non terminal         expr;
 
 precedence left PLUS;
 precedence left MUL;
 
-start with expr;
 
-expr ::=  expr PLUS expr
-       |  expr MUL expr 
-       |  LPAREN expr RPAREN  
-       |  INTEGER_LITERAL ;     
+// Regla inicial
 
+start with Program;
+
+Program ::=     Main
+              | Main Functions
+              | Functions Main 
+              | Functions Main Functions;
+
+Functions ::=   Functions Function
+              |  Function;
+
+Main ::= INT MAIN LPAREN RPAREN LBRACE StatementList RBRACE;         
+
+StatementList ::=      StatementList:s Statement:e    {: s.add(e); RESULT = s; :}
+                     |                                {: RESULT = new LinkedList(); :};
+
+
+Statement   ::= error DOLAR
+              {:
+                     System.err.println("Error de sintaxis. Recuperación en modo pánico activada.");
+              :}
+              | Declaration DOLAR;
+
+Declaration::= Type:t IDENTIFIER:id
+              {:
+                     RESULT = new Declaration((Type)t, id.toString()); 
+
+              :};
+
+Type ::= INT         {: RESULT = new Type("int"); :}
+       | FLOAT       {: RESULT = new Type("float"); :}
+       | CHAR        {: RESULT = new Type("char"); :}
+       | BOOL        {: RESULT = new Type("bool"); :};
