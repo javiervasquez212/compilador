@@ -36,27 +36,56 @@ terminal             SEMICOLON, LPAREN, RPAREN, LBRACE, RBRACE, LBRACKET, RBRACK
 terminal             PLUS, MINUS, MUL, DIV, EQ, EQEQ, LESS_THAN, LESS_THAN_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, NOT_EQUAL, AND, OR;
 terminal             INCREMENT, DECREMENT, POWER, MODULO, DOLAR, NOT;
 terminal             IDENTIFIER, INTEGER_LITERAL, FLOAT_LITERAL, CHAR_LITERAL, STRING_LITERAL;
+terminal             COMMA;
+
 
 /** simbolos no terminales **/
 
 
-non terminal         Program, Main, Functions, Function ;
-non terminal         Type ;
+non terminal         Program, Main, Functions, Function, Function_id, Parameters, Param;
+non terminal         Type, error_until_dolar ;
 
 //Statements
 non terminal List    StatementList;
 non terminal         Statement;
 non terminal         Declaration;
+non terminal         ReadFunction;
+non terminal         PrintFunction;
+non terminal         InvocationParams;
+non terminal         FunctionCall;
+non terminal         ControlStructure;
+non terminal         Assign;
 
-non terminal         expr;
 
-precedence left PLUS;
-precedence left MUL;
+//expr
+non terminal         expr, expr_rel, expr_log, expr_bin;
+non terminal         op_log, op_rel, op_bin, op_mult;
+non terminal         term, factor;
+non terminal         Literals;
+
+//extra 
+non terminal         InvParam;
+
+//Control Structure
+
+non terminal         If_Structure, Elif_Structure, For_Structure,  DoWhile_Structure;
+non terminal         If_Branch, Elif_Branch, Else_Branch;
+
+
+
+precedence left PLUS, MINUS;
+precedence left MUL, DIV, MODULO;
+precedence right POWER;
+precedence left AND, OR;
+precedence left LESS_THAN, LESS_THAN_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, EQEQ, NOT_EQUAL;
+precedence right INCREMENT, DECREMENT, MINUS;
 
 
 // Regla inicial
 
 start with Program;
+
+//main-functions
 
 Program ::=     Main
               | Main Functions
@@ -64,27 +93,158 @@ Program ::=     Main
               | Functions Main Functions;
 
 Functions ::=   Functions Function
-              |  Function;
+              | Function;
 
-Main ::= INT MAIN LPAREN RPAREN LBRACE StatementList RBRACE;         
+Main ::= INT MAIN LPAREN RPAREN LBRACE StatementList RBRACE;        
+
+Function ::= Function_id LPAREN Parameters RPAREN LBRACE StatementList RBRACE;
+
+Function_id ::= Type IDENTIFIER;
+
+Parameters ::=   Param 
+                | Parameters COMMA Param
+                |;
+
+Param ::= Type IDENTIFIER; 
+
+//statements 
 
 StatementList ::=      StatementList:s Statement:e    {: s.add(e); RESULT = s; :}
                      |                                {: RESULT = new LinkedList(); :};
 
 
-Statement   ::= error DOLAR
-              {:
-                     System.err.println("Error de sintaxis. Recuperación en modo pánico activada.");
-              :}
-              | Declaration DOLAR;
+Statement   ::= error_until_dolar
+              | Declaration DOLAR
+              | BREAK DOLAR
+              | ReadFunction DOLAR
+              | PrintFunction DOLAR
+              | ControlStructure
+              | Assign DOLAR;
 
-Declaration::= Type:t IDENTIFIER:id
+
+
+FunctionCall ::=        IDENTIFIER LPAREN RPAREN
+                     |  IDENTIFIER LPAREN InvocationParams RPAREN;
+
+InvocationParams ::=    InvocationParams COMMA InvParam
+                     |  InvParam;
+
+
+InvParam ::=     Literals
+              |  IDENTIFIER;
+// assing 
+
+Assign ::=  IDENTIFIER EQ expr;
+// Declaration 
+
+Declaration::=   Type:t IDENTIFIER:id
               {:
                      RESULT = new Declaration((Type)t, id.toString()); 
 
-              :};
+              :}
+              |  Type IDENTIFIER EQ expr
+              |  Type IDENTIFIER EQ ReadFunction
+              |  Type IDENTIFIER EQ PrintFunction;
+
+// if - elif - else - for - do-while  
+
+ControlStructure ::=  If_Structure ;
+
+If_Structure ::= If_Branch Elif_Structure Else_Branch;
+
+If_Branch ::= IF LPAREN expr RPAREN LBRACE StatementList RBRACE ;
+
+Elif_Structure ::=  Elif_Structure Elif_Branch
+                 |  ;
+
+Elif_Branch ::=  ELIF LPAREN expr RPAREN LBRACE StatementList RBRACE;
+
+Else_Branch ::=  ELSE LBRACE StatementList RBRACE
+              |  ;
+
+// READ - PRINT
+
+ReadFunction ::=        READ LPAREN RPAREN
+                     |  READ LPAREN Literals RPAREN
+                     |  READ LPAREN IDENTIFIER RPAREN  ;
+
+
+PrintFunction ::=       PRINT LPAREN RPAREN
+                     |  PRINT LPAREN Literals RPAREN
+                     |  PRINT LPAREN IDENTIFIER RPAREN  ;
+
+// types
 
 Type ::= INT         {: RESULT = new Type("int"); :}
        | FLOAT       {: RESULT = new Type("float"); :}
        | CHAR        {: RESULT = new Type("char"); :}
        | BOOL        {: RESULT = new Type("bool"); :};
+//errors
+error_until_dolar ::=   error DOLAR
+                     {:
+                            System.err.println("Error de sintaxis. Recuperación en modo pánico activada.");
+                     :}
+                     |  error error_until_dolar;
+
+//expressions
+
+expr ::= expr_rel;
+
+expr_rel ::=     expr_log
+              |  expr_rel op_log expr_rel
+              |  expr_log op_rel expr_log
+              |  expr_rel op_rel expr_rel;
+
+expr_log ::=     expr_bin
+              |  expr_log op_log expr_log
+              |  NOT expr_log;
+
+expr_bin ::=     term
+              |  expr_bin op_bin term;
+
+term ::=  factor
+       |  term op_mult factor;
+
+factor ::=       INTEGER_LITERAL
+              |  FLOAT_LITERAL
+              |  TRUE
+              |  FALSE
+              |  CHAR_LITERAL
+              |  STRING_LITERAL
+              |  IDENTIFIER;
+
+// operators
+
+op_log ::=       AND
+              |  OR;
+
+op_rel ::=       EQEQ
+              |  LESS_THAN
+              |  LESS_THAN_EQUAL
+              |  GREATER_THAN
+              |  GREATER_THAN_EQUAL
+              |  NOT_EQUAL;
+
+op_bin ::=       PLUS
+              |  MINUS
+              |  MUL
+              |  DIV
+              |  MODULO
+              |  POWER;
+
+op_mult ::=      MUL
+              |  MODULO
+              |  DIV;
+
+op_unario ::=    INCREMENT
+              |  DECREMENT
+              |  MINUS;
+
+//literals
+
+Literals::=      INTEGER_LITERAL
+              |  FLOAT_LITERAL
+              |  TRUE
+              |  FALSE
+              |  CHAR_LITERAL
+              |  STRING_LITERAL;

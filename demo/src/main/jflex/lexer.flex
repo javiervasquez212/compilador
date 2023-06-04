@@ -109,6 +109,8 @@ CommentContent       = ( [^*] | \*+ [^/*] )*
     "!="    { return symbol(ParserSym.NOT_EQUAL, yytext()); }
     "^"     { return symbol(ParserSym.AND, yytext()); }
     "#"     { return symbol(ParserSym.OR, yytext()); }
+    ","     { return symbol(ParserSym.COMMA, yytext()); }
+
 
     /* comments (C-style) */
     "/_"              { yybegin(COMMENT); }
@@ -131,6 +133,6 @@ CommentContent       = ( [^*] | \*+ [^/*] )*
     \"   { yybegin(YYINITIAL); return symbol(ParserSym.STRING_LITERAL, string.toString()); } // Fin del string
 }
 
-[^] {
+. {
     throw new Error("Carácter ilegal <" + yytext() + "> en línea " + yyline + ", columna " + yycolumn);
 }
