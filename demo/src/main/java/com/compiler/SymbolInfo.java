@@ -5,6 +5,8 @@ public class SymbolInfo {
     private String type;
     private Object value;
     
+    public SymbolInfo() {
+    }
     public String getIdentifier() {
         return identifier;
     }

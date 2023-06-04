@@ -11,6 +11,7 @@ public class App {
             Lexer lexer = new Lexer(reader);
             Parser p = new Parser(lexer);
             p.parse();
+            p.printSymbolTable();
             System.out.println("Analisis realizado correctamente.");
         } catch(Exception e) {
             System.out.println("Ocurrió un error durante el análisis: " + e.getMessage());

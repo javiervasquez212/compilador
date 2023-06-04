@@ -3,10 +3,10 @@ package com.compiler;
 public class Declaration {
     private Type type;
     
-    public Declaration(Type type, String id, Expression expression) {
+    public Declaration(Type type, String id, String value) {
         this.type = type;
         this.id = id;
-        this.expression = expression;
+        this.value = value;
     }
     public Declaration(Type type, String id) {
         this(type, id, null);
@@ -24,12 +24,14 @@ public class Declaration {
     public void setId(String id) {
         this.id = id;
     }
-    private Expression expression;
+
+    private String value;
+    public String getValue() {
+        return value;
+    }
+    public void setValue(String value) {
+        this.value = value;
+    }
     
-    public Expression getExpression() {
-        return expression;
-    }
-    public void setExpression(Expression expression) {
-        this.expression = expression;
-    }
+
 }

@@ -28,4 +28,20 @@ public class SymbolTable {
         }
         return null;  // not found in any scope
     }
+
+
+    public void printSymbolTable() {
+        int scopeIndex = 0;
+        for (HashMap<String, SymbolInfo> scope : scopes) {
+            System.out.println("Alcance " + scopeIndex + ":");
+            for (String key : scope.keySet()) {
+                SymbolInfo info = scope.get(key);
+                System.out.println("    Identificador: " + key);
+                System.out.println("    Tipo: " + info.getType());
+                System.out.println("    Valor: " + info.getValue());
+                System.out.println();
+            }
+            scopeIndex++;
+        }
+    }
 }

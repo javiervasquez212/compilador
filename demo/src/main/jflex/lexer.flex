@@ -28,15 +28,14 @@ import java_cup.runtime.*;
     return symbol(ParserSym.EOF);
 %eofval}
 
-digit           = [0-9]
 WhiteSpace      = [ \t\r\n]+
 InputCharacter  = [^\r\n]
 LineTerminator = \r|\n|\r\n
 
 Identifier      = [a-zA-Z_] [a-zA-Z0-9_]*
 
-IntegerLiteral  = {digit}+
-FloatLiteral    = {digit}+"."{digit}*
+IntegerLiteral  = -?[0-9]+
+FloatLiteral    = -?[0-9]+\.[0-9]+
 
 Comment = {TraditionalComment} | {EndOfLineComment} | {DocumentationComment}
 
@@ -91,7 +90,6 @@ CommentContent       = ( [^*] | \*+ [^/*] )*
     "-"     { return symbol(ParserSym.MINUS, yytext()); }
     "*"     { return symbol(ParserSym.MUL, yytext()); }
     "/"     { return symbol(ParserSym.DIV, yytext()); }
-    ";"     { return symbol(ParserSym.SEMICOLON, yytext()); }
     "("     { return symbol(ParserSym.LPAREN, yytext()); }
     ")"     { return symbol(ParserSym.RPAREN, yytext()); }
     "{"     { return symbol(ParserSym.LBRACE, yytext()); }
