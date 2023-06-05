@@ -1,20 +1,23 @@
 package com.compiler;
 import java.util.HashMap;
 import java.util.Stack;
-
+import java.util.ArrayList;
 public class SymbolTable {
     private Stack<HashMap<String, SymbolInfo>> scopes;
+    private ArrayList<HashMap<String, SymbolInfo>> oldScopes;
 
     public SymbolTable() {
         scopes = new Stack<>();
         scopes.push(new HashMap<>());  // push a new scope for global variables
+        oldScopes = new ArrayList<>();
     }
     
     public void pushScope() {
         scopes.push(new HashMap<>());
     }
     public void popScope() {
-        scopes.pop();
+        HashMap<String, SymbolInfo> oldScope = scopes.pop();
+        oldScopes.add(oldScope);
     }
     public void addSymbol(String identifier, SymbolInfo info) {
         scopes.peek().put(identifier, info);
@@ -30,9 +33,9 @@ public class SymbolTable {
     }
 
 
-    public void printSymbolTable() {
+    private void printScopes(ArrayList<HashMap<String, SymbolInfo>> scopesToPrint) {
         int scopeIndex = 0;
-        for (HashMap<String, SymbolInfo> scope : scopes) {
+        for (HashMap<String, SymbolInfo> scope : scopesToPrint) {
             System.out.println("Alcance " + scopeIndex + ":");
             for (String key : scope.keySet()) {
                 SymbolInfo info = scope.get(key);
@@ -44,4 +47,18 @@ public class SymbolTable {
             scopeIndex++;
         }
     }
+    
+    public void printAllScopes() {
+        ArrayList<HashMap<String, SymbolInfo>> allScopes = new ArrayList<>(scopes);
+        allScopes.addAll(oldScopes);
+        printScopes(allScopes);
+    }
+    public SymbolInfo getGlobalSymbol(String identifier) {
+        HashMap<String, SymbolInfo> globalScope = scopes.get(0);  // get the global scope
+        if (globalScope.containsKey(identifier)) {
+            return globalScope.get(identifier);
+        }
+        return null;  // not found in global scope
+    }
+    
 }

@@ -26,8 +26,10 @@ parser code {:
               }
               System.err.println(m);
        }
+
+
        public void printSymbolTable() {
-        symbolTable.printSymbolTable();
+        symbolTable.printAllScopes();
     }
 
     public void report_semantic_error(String message, Object info) {
@@ -64,11 +66,11 @@ terminal             COMMA;
 /** simbolos no terminales **/
 
 
-non terminal         Program, Main, Functions, Function, Function_id, Parameters, Param;
+non terminal         Program, Main, Functions, Function, Function_id, Param;
 non terminal         Type, error_until_dolar ;
 
 //Statements
-non terminal List    StatementList;
+non terminal List    StatementList,Parameters;
 non terminal         Statement;
 non terminal         Declaration;
 non terminal         ReadFunction;
@@ -121,18 +123,28 @@ Program ::=     Main
 Functions ::=   Functions Function
               | Function;
 
-Main ::= INT MAIN LPAREN RPAREN LBRACE StatementList RBRACE;        
+Main ::= INT MAIN LPAREN RPAREN LBRACE {: symbolTable.pushScope(); :}  StatementList RBRACE {: symbolTable.popScope(); :};        
 
-Function ::= Function_id LPAREN Parameters RPAREN LBRACE StatementList RBRACE;
+Function ::= Function_id:id LPAREN Parameters RPAREN LBRACE {: symbolTable.pushScope(); :} StatementList RBRACE
+              {: 
+                     symbolTable.popScope();
+                     if (symbolTable.getSymbol(id.toString()) == null) {
+                            SymbolInfo info = new SymbolInfo();
+                            info.setType("function");
+                            symbolTable.addSymbol(((FunctionID)id).getId(),info); 
+                     }else {
+                    report_semantic_error("Funcion ya definida: " + id.toString(), id);
+                       } :};
+                    
 
-Function_id ::= Type IDENTIFIER;
 
-Parameters ::=   Param 
-                | Parameters COMMA Param
-                |;
+Function_id ::= Type:t IDENTIFIER:id 
+               {: RESULT = new FunctionID(t.toString(), id.toString()); :};
 
-Param ::= Type IDENTIFIER; 
-
+Parameters ::=  Param
+                |Parameters COMMA Param
+                |  ;                            
+Param ::= Type:t IDENTIFIER:id;
 //statements 
 
 StatementList ::=      StatementList:s Statement:e    {: s.add(e); RESULT = s; :}
@@ -148,13 +160,23 @@ Statement   ::= error_until_dolar
               | ControlStructure
               | Array_assign DOLAR
               | Array_declaration DOLAR
-              | FunctionCall
+              | FunctionCall:id DOLAR
+              {:
+                     SymbolInfo info = symbolTable.getSymbol(id.toString());
+                     if (info == null){
+                            report_semantic_error("Funcion no definida: " + id, id);
+                     }else{
+                            RESULT = id;
+                     }
+                    
+
+                     :};
               | Assign DOLAR;
 
 
 
-FunctionCall ::=        IDENTIFIER LPAREN RPAREN
-                     |  IDENTIFIER LPAREN InvocationParams RPAREN;
+FunctionCall ::=        IDENTIFIER:id LPAREN RPAREN {: RESULT = id;:}
+                     |  IDENTIFIER:id LPAREN InvocationParams RPAREN{: RESULT = id;:};
 
 InvocationParams ::=    InvocationParams COMMA InvParam
                      |  InvParam;
@@ -171,7 +193,19 @@ Array_assign ::= IDENTIFIER LBRACKET expr RBRACKET EQ expr;
 Array_expr ::= IDENTIFIER LBRACKET expr RBRACKET ;
 // assing 
 
-Assign ::=      IDENTIFIER EQ expr
+Assign ::=       IDENTIFIER:id EQ expr:e
+                     {:
+
+
+                 SymbolInfo info = symbolTable.getSymbol(id.toString());
+                if (info == null) {
+                   report_semantic_error("Identificador no definido: " + id.toString(), id);
+                } else {
+                     info.setValue(e);
+
+                }
+           
+                     :}
               |  IDENTIFIER EQ ReadFunction
               |  IDENTIFIER EQ PrintFunction;
 
@@ -193,9 +227,9 @@ Declaration::=   Type:t IDENTIFIER:id
                 if (symbolTable.getSymbol(id.toString()) == null) {
                     SymbolInfo info = new SymbolInfo();
                     info.setType(((Type)t).getTypeName());
-                    info.setValue(e)
+                    info.setValue(e);
                     symbolTable.addSymbol(id.toString(), info);
-                    RESULT = new Declaration((Type)t, id.toString(), e.toString());
+                    RESULT = new Declaration((Type)t, id.toString());
                 } else {
                     report_semantic_error("Variable ya definida: " + id.toString(), id);
                 }
@@ -213,20 +247,20 @@ ControlStructure ::=   If_Structure
 
 If_Structure ::= If_Branch Elif_Structure Else_Branch;
 
-If_Branch ::= IF LPAREN expr RPAREN LBRACE StatementList RBRACE ;
+If_Branch ::= IF LPAREN expr RPAREN LBRACE {: symbolTable.pushScope(); :}  StatementList RBRACE {: symbolTable.popScope(); :};
 
 Elif_Structure ::=  Elif_Structure Elif_Branch
                  |  ;
 
-Elif_Branch ::=  ELIF LPAREN expr RPAREN LBRACE StatementList RBRACE;
+Elif_Branch ::=  ELIF LPAREN expr RPAREN LBRACE {: symbolTable.pushScope(); :} StatementList RBRACE {: symbolTable.popScope(); :};
 
-Else_Branch ::=  ELSE LBRACE StatementList RBRACE
+Else_Branch ::=  ELSE LBRACE {: symbolTable.pushScope(); :} StatementList RBRACE {: symbolTable.popScope(); :}
               |  ;
 
 
 //for
 
-For_Structure ::= FOR LPAREN Cond_for DOLAR expr DOLAR inc_for RPAREN LBRACE StatementList RBRACE;
+For_Structure ::= FOR LPAREN Cond_for DOLAR expr DOLAR inc_for RPAREN LBRACE {: symbolTable.pushScope(); :}  StatementList RBRACE {: symbolTable.popScope(); :} ;
 
 inc_for  ::=     INCREMENT IDENTIFIER
                | DECREMENT IDENTIFIER
@@ -237,7 +271,7 @@ Cond_for ::=     Declaration
 
 //do-while
 
-Do_While_Structure::= DO LBRACE StatementList RBRACE WHILE LPAREN expr RPAREN DOLAR;
+Do_While_Structure::= DO LBRACE {: symbolTable.pushScope(); :}  StatementList RBRACE {: symbolTable.popScope(); :} WHILE LPAREN expr RPAREN DOLAR;
 
 // READ - PRINT
 
@@ -257,7 +291,9 @@ Type ::= INT         {: RESULT = new Type("int"); :}
        | CHAR        {: RESULT = new Type("char"); :}
        | BOOL        {: RESULT = new Type("bool"); :}
        | STRING      {: RESULT = new Type("string"); :}; 
+
 //errors
+
 error_until_dolar ::=   error DOLAR
                      {:
                             System.err.println("Error de sintaxis. Recuperación en modo pánico activada.");
@@ -266,61 +302,81 @@ error_until_dolar ::=   error DOLAR
 
 //expressions
 
-expr ::= expr_rel;
+expr ::= expr_rel:exr {:RESULT = exr;:};
 
-expr_rel ::=     expr_log
+expr_rel ::=     expr_log:exl {:RESULT = exl;:}
               |  expr_rel op_log expr_rel
               |  expr_log op_rel expr_log
               |  expr_rel op_rel expr_rel;
 
-expr_log ::=     expr_bin
+expr_log ::=     expr_bin:exb {:RESULT = exb;:}
               |  expr_log op_log expr_log
               |  NOT expr_log;
 
-expr_bin ::=     term
+expr_bin ::=     term:t {:RESULT = t;:}
               |  expr_bin op_bin term;
 
-term ::=  factor
+term ::=  factor:f {:RESULT = f;:}
        |  term op_mult factor;
 
-factor ::=       INTEGER_LITERAL
-              |  FLOAT_LITERAL
-              |  TRUE
-              |  FALSE
-              |  CHAR_LITERAL
-              |  STRING_LITERAL
-              |  IDENTIFIER
+factor ::=       INTEGER_LITERAL:intL      {:RESULT = intL;:}
+              |  FLOAT_LITERAL:floatL      {:RESULT = floatL;:}
+              |  TRUE:trueL                {:RESULT = trueL;:}
+              |  FALSE:falseL              {:RESULT = falseL;:}
+              |  CHAR_LITERAL:charL        {:RESULT = charL;:}
+              |  STRING_LITERAL:stringL    {:RESULT = stringL;:}
+              |  IDENTIFIER:id             
+                     {:
+                     SymbolInfo info = symbolTable.getSymbol(id.toString());
+                     if (info == null){
+                            report_semantic_error("Identificador no definido: " + id, id);
+                     }else{
+                            RESULT = id;
+                     }
+                    
+
+                     :}
               |  op_unario factor
-              |  LPAREN expr RPAREN
+              |  LPAREN expr:e RPAREN     {:RESULT = e;:}
               |  Array_expr
-              |  FunctionCall;
+              |  FunctionCall:id
+              {:
+                     SymbolInfo info = symbolTable.getSymbol(id.toString());
+                     if (info == null){
+                            report_semantic_error("Funcion no definida: " + id, id);
+                     }else{
+                            RESULT = id;
+                     }
+                    
+
+                     :};
 
 // operators
 
-op_log ::=       AND
-              |  OR;
+op_log ::=       AND        {:RESULT = "^";:} 
+              |  OR         {:RESULT = "#";:} ;
 
-op_rel ::=       EQEQ
-              |  LESS_THAN
-              |  LESS_THAN_EQUAL
-              |  GREATER_THAN
-              |  GREATER_THAN_EQUAL
-              |  NOT_EQUAL;
+op_rel ::=       EQEQ                     {:RESULT = "==";:}
+              |  LESS_THAN                {:RESULT = "<";:}
+              |  LESS_THAN_EQUAL          {:RESULT = "<=";:}
+              |  GREATER_THAN             {:RESULT = ">";:}
+              |  GREATER_THAN_EQUAL       {:RESULT = ">=";:}
+              |  NOT_EQUAL                {:RESULT = "!=";:};
 
-op_bin ::=       PLUS
-              |  MINUS
-              |  MUL
-              |  DIV
-              |  MODULO
-              |  POWER;
+op_bin ::=       PLUS       {:RESULT = "+";:}
+              |  MINUS      {:RESULT = "-";:}
+              |  MUL        {:RESULT = "*";:}
+              |  DIV        {:RESULT = "/";:}
+              |  MODULO     {:RESULT = "~";:}
+              |  POWER      {:RESULT = "**";:};
 
-op_mult ::=      MUL
-              |  MODULO
-              |  DIV;
+op_mult ::=      MUL        {:RESULT = "*";:}
+              |  MODULO     {:RESULT = "~";:}
+              |  DIV        {:RESULT = "/";:};
 
-op_unario ::=    INCREMENT
-              |  DECREMENT
-              |  MINUS;
+op_unario ::=    INCREMENT  {:RESULT = "++";:}
+              |  DECREMENT  {:RESULT = "--";:}
+              |  MINUS      {:RESULT = "-";:};
 
 //literals
 

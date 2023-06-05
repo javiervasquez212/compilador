@@ -3,7 +3,7 @@ package com.compiler;
 public class Declaration {
     private Type type;
     
-    public Declaration(Type type, String id, String value) {
+    public Declaration(Type type, String id, Object value) {
         this.type = type;
         this.id = id;
         this.value = value;
@@ -25,11 +25,11 @@ public class Declaration {
         this.id = id;
     }
 
-    private String value;
-    public String getValue() {
+    private Object value;
+    public Object getValue() {
         return value;
     }
-    public void setValue(String value) {
+    public void setValue(Object value) {
         this.value = value;
     }
     

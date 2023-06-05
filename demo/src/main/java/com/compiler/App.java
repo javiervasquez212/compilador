@@ -1,4 +1,5 @@
 package com.compiler;
+import java_cup.runtime.Symbol;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

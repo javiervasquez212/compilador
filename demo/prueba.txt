@@ -1,5 +1,17 @@
 
 int main(){
-    int a $
-    int a $
+
+    int a$
 }
+
+int prueba (float  d){
+
+    int e$
+    int a = e$
+    }
+
+int prueba2 (float  d){
+
+    int e$
+    int a = prueba3() $
+    }
