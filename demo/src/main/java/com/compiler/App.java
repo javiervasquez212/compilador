@@ -45,6 +45,7 @@ public class App {
             p.parse();
 
             System.out.println("Analisis finalizado.");
+            
 
             String cod3DOutput = p.action_obj.getImprimirCod3DOutput();
             String symbolTableOutput = p.getSymbolTable();

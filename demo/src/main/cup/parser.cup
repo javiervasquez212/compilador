@@ -46,6 +46,7 @@ parser code {:
        }
        public String getSymbolTable(){
               return symbolTable.getPrintAllScopes();
+              
        }
 
 

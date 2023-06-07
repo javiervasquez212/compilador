@@ -615,6 +615,7 @@ public class Parser extends java_cup.runtime.lr_parser {
        }
        public String getSymbolTable(){
               return symbolTable.getPrintAllScopes();
+              
        }
 
 
