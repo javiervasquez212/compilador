@@ -8,10 +8,23 @@ import java.util.LinkedList;
 class Parser;
 
 //Probar crear un arbol(futuro)
+action code {:
+
+       StringBuffer cod3D = new StringBuffer();
+       int currentTemp = 1;
+       int currentLabel = 1;
+       public void imprimirCod3D() {
+              System.out.println(cod3D.toString());
+       }
+
+
+:}
 
 parser code {:
+
     // define the symbol table
        private SymbolTable symbolTable = new SymbolTable();
+       private String endIfLabel;
 
        public void report_error(String message, Object info) {
               StringBuilder m = new StringBuilder("Error de sintaxis");
@@ -48,6 +61,7 @@ parser code {:
     System.err.println(m.toString());
     //System.exit(1);  // Terminate the program with an error status
    } 
+   
 
 :};
 
@@ -123,7 +137,18 @@ Program ::=     Main
 Functions ::=   Functions Function
               | Function;
 
-Main ::= INT MAIN LPAREN RPAREN LBRACE {: symbolTable.pushScope(); :}  StatementList RBRACE {: symbolTable.popScope(); :};        
+Main ::=      INT MAIN 
+              {:
+                     cod3D.append("\n_main_begin: ");
+              :}
+              LPAREN RPAREN LBRACE 
+              {: 
+                     symbolTable.pushScope(); 
+              :}  StatementList RBRACE 
+              {: 
+                     symbolTable.popScope(); 
+                     cod3D.append("\n_main_end: ");
+              :};        
 
 Function ::= Function_id:id LPAREN Parameters RPAREN LBRACE {: symbolTable.pushScope(); :} StatementList RBRACE
               {: 
@@ -136,7 +161,8 @@ Function ::= Function_id:id LPAREN Parameters RPAREN LBRACE {: symbolTable.pushS
                     report_semantic_error("Funcion ya definida: " + id.toString(), id);
                        } :};
                     
-
+                     
+//_main_begin:
 
 Function_id ::= Type:t IDENTIFIER:id 
                {: RESULT = new FunctionID(t.toString(), id.toString()); :};
@@ -170,7 +196,7 @@ Statement   ::= error_until_dolar
                      }
                     
 
-                     :};
+                     :}
               | Assign DOLAR;
 
 
@@ -200,10 +226,14 @@ Assign ::=       IDENTIFIER:id EQ expr:e
                  SymbolInfo info = symbolTable.getSymbol(id.toString());
                 if (info == null) {
                    report_semantic_error("Identificador no definido: " + id.toString(), id);
-                } else {
+                } if (info.getType().equals("string") && !(e instanceof String)) {
+                report_semantic_error("Tipo de asignación incorrecto para: " + id.toString(), id);
+            }
+            else {
+                     String[] partesExpr = e.toString().split("::");
+                     cod3D.append("\n"+id+" = "+partesExpr[1]); 
                      info.setValue(e);
-
-                }
+            }
            
                      :}
               |  IDENTIFIER EQ ReadFunction
@@ -214,12 +244,13 @@ Assign ::=       IDENTIFIER:id EQ expr:e
 Declaration::=   Type:t IDENTIFIER:id
                 {:
                 if (symbolTable.getSymbol(id.toString()) == null) {
-                    SymbolInfo info = new SymbolInfo();
-                    info.setType(((Type)t).getTypeName());
-                    symbolTable.addSymbol(id.toString(), info);
-                    RESULT = new Declaration((Type)t, id.toString());
+                     cod3D.append("\ndata_"+((Type)t).getTypeName()+" "+id.toString());
+                     SymbolInfo info = new SymbolInfo();
+                     info.setType(((Type)t).getTypeName());
+                     symbolTable.addSymbol(id.toString(), info);
+                     RESULT = new Declaration((Type)t, id.toString());
                 } else {
-                    report_semantic_error("Variable ya definida: " + id.toString(), id);
+                     report_semantic_error("Variable ya definida: " + id.toString(), id);
                 }
             :}
               |  Type:t IDENTIFIER:id EQ expr:e
@@ -247,14 +278,15 @@ ControlStructure ::=   If_Structure
 
 If_Structure ::= If_Branch Elif_Structure Else_Branch;
 
-If_Branch ::= IF LPAREN expr RPAREN LBRACE {: symbolTable.pushScope(); :}  StatementList RBRACE {: symbolTable.popScope(); :};
 
-Elif_Structure ::=  Elif_Structure Elif_Branch
-                 |  ;
+If_Branch ::= IF LPAREN expr RPAREN LBRACE StatementList RBRACE;
 
-Elif_Branch ::=  ELIF LPAREN expr RPAREN LBRACE {: symbolTable.pushScope(); :} StatementList RBRACE {: symbolTable.popScope(); :};
+Elif_Structure ::=      Elif_Structure Elif_Branch
+                     |  ;
 
-Else_Branch ::=  ELSE LBRACE {: symbolTable.pushScope(); :} StatementList RBRACE {: symbolTable.popScope(); :}
+Elif_Branch ::=  ELIF LPAREN expr RPAREN LBRACE StatementList RBRACE;
+
+Else_Branch ::= ELSE LBRACE StatementList RBRACE 
               |  ;
 
 
@@ -305,37 +337,117 @@ error_until_dolar ::=   error DOLAR
 expr ::= expr_rel:exr {:RESULT = exr;:};
 
 expr_rel ::=     expr_log:exl {:RESULT = exl;:}
-              |  expr_rel op_log expr_rel
-              |  expr_log op_rel expr_log
-              |  expr_rel op_rel expr_rel;
+              |  expr_rel:e1  op_log:opl expr_rel:e2
+                     {:
+                            String[] partesExpr1 = e1.toString().split("::");
+                            String[] partesExpr2 = e2.toString().split("::");
+                            String temp = "t"+(currentTemp++);
+                            cod3D.append("\n"+temp+" = "+partesExpr1[1]+" "+opl +" "+partesExpr2[1]);
+                            RESULT = partesExpr1[0]+opl+partesExpr2[0]+"::"+temp;
+                     :}
+              |  expr_log:e1  op_rel:opr expr_log:e2
+                     {:
+                            String[] partesExpr1 = e1.toString().split("::");
+                            String[] partesExpr2 = e2.toString().split("::");
+                            String temp = "t"+(currentTemp++);
+                            cod3D.append("\n"+temp+" = "+partesExpr1[1]+" "+opr +" "+partesExpr2[1]);
+                            RESULT = partesExpr1[0]+opr+partesExpr2[0]+"::"+temp;
+                     :}
+              |  expr_rel:e1  op_rel:opr expr_rel:e2
+                     {:
+                            String[] partesExpr1 = e1.toString().split("::");
+                            String[] partesExpr2 = e2.toString().split("::");
+                            String temp = "t"+(currentTemp++);
+                            cod3D.append("\n"+temp+" = "+partesExpr1[1]+" "+opr +" "+partesExpr2[1]);
+                            RESULT = partesExpr1[0]+opr+partesExpr2[0]+"::"+temp;
+                     :};
 
 expr_log ::=     expr_bin:exb {:RESULT = exb;:}
-              |  expr_log op_log expr_log
-              |  NOT expr_log;
+              |  expr_log:e1 op_log:opl expr_log:e2
+                     {:
+                            String[] partesExpr1 = e1.toString().split("::");
+                            String[] partesExpr2 = e2.toString().split("::");
+                            String temp = "t"+(currentTemp++);
+                            cod3D.append("\n"+temp+" = "+partesExpr1[1]+" "+opl +" "+partesExpr2[1]);
+                            RESULT = partesExpr1[0]+opl+partesExpr2[0]+"::"+temp;
+                     :}
+              |  NOT expr_log:el
+                     {:
+                            String[] partesExpr = el.toString().split("::");
+                            String temp = "t"+(currentTemp++);
+                            cod3D.append("\n"+temp+" = NOT "+partesExpr[1]);
+                            RESULT = "!"+partesExpr[0]+"::"+temp;
+                     :};
 
 expr_bin ::=     term:t {:RESULT = t;:}
-              |  expr_bin op_bin term;
+              |  expr_bin:e1 op_bin:opb term:e2
+                     {:
+                            String[] partesExpr1 = e1.toString().split("::");
+                            String[] partesExpr2 = e2.toString().split("::");
+                            String temp = "t"+(currentTemp++);
+                            cod3D.append("\n"+temp+" = "+partesExpr1[1]+" "+opb+" "+partesExpr2[1]);
+                            RESULT = partesExpr1[0]+opb+partesExpr2[0]+"::"+temp;
+                     :};
 
 term ::=  factor:f {:RESULT = f;:}
-       |  term op_mult factor;
+       |  term:e1 op_mult:opm factor:e2
+              {:
+                     String[] partesExpr1 = e1.toString().split("::");
+                     String[] partesExpr2 = e2.toString().split("::");
+                     String temp = "t"+(currentTemp++);
+                     cod3D.append("\n"+temp+" = "+partesExpr1[1]+" "+opm+" "+partesExpr2[1]);
+                     RESULT = partesExpr1[0]+opm+partesExpr2[0]+"::"+temp;
+              :};
 
-factor ::=       INTEGER_LITERAL:intL      {:RESULT = intL;:}
-              |  FLOAT_LITERAL:floatL      {:RESULT = floatL;:}
-              |  TRUE:trueL                {:RESULT = trueL;:}
-              |  FALSE:falseL              {:RESULT = falseL;:}
-              |  CHAR_LITERAL:charL        {:RESULT = charL;:}
-              |  STRING_LITERAL:stringL    {:RESULT = stringL;:}
+factor ::=     INTEGER_LITERAL:intL      
+              {:
+              String temp = "t" + (currentTemp++);
+              cod3D.append("\n" + temp + " = " + intL);
+              RESULT = intL.toString() + "::" + temp;
+              :}
+              |  FLOAT_LITERAL:floatL      
+              {:
+              String temp = "t" + (currentTemp++);
+              cod3D.append("\n" + temp + " = " + floatL);
+              RESULT = floatL.toString() + "::" + temp;
+              :}
+              |  TRUE:trueL                
+              {:
+              String temp = "t" + (currentTemp++);
+              cod3D.append("\n" + temp + " = " + trueL);
+              RESULT = trueL.toString() + "::" + temp;
+              :}
+              |  FALSE:falseL            
+              {:
+              String temp = "t" + (currentTemp++);
+              cod3D.append("\n" + temp + " = " + falseL);
+              RESULT = falseL.toString() + "::" + temp;
+              :}
+              |  CHAR_LITERAL:charL        
+              {:
+              String temp = "t" + (currentTemp++);
+              cod3D.append("\n" + temp + " = " + charL);
+              RESULT = charL.toString() + "::" + temp;
+              :}
+              |  STRING_LITERAL:stringL    
+              {:
+              String temp = "t" + (currentTemp++);
+              cod3D.append("\n" + temp + " = " + stringL);
+              RESULT = stringL.toString() + "::" + temp;
+              :}
               |  IDENTIFIER:id             
-                     {:
-                     SymbolInfo info = symbolTable.getSymbol(id.toString());
-                     if (info == null){
-                            report_semantic_error("Identificador no definido: " + id, id);
-                     }else{
-                            RESULT = id;
-                     }
-                    
+              {:
+              SymbolInfo info = symbolTable.getSymbol(id.toString());
+              if (info == null){
+                     report_semantic_error("Identificador no definido: " + id, id);
+              }else{
+                     String temp = "t" + (currentTemp++);
+                     cod3D.append("\n" + temp + " = " + id);
+                     RESULT = id + "::" + temp;;
+              }
+              
 
-                     :}
+              :}
               |  op_unario factor
               |  LPAREN expr:e RPAREN     {:RESULT = e;:}
               |  Array_expr

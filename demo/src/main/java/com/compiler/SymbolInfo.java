@@ -4,7 +4,7 @@ public class SymbolInfo {
     private String identifier;
     private String type;
     private Object value;
-    
+    private String valueType;
     public SymbolInfo() {
     }
     public String getIdentifier() {
@@ -25,6 +25,13 @@ public class SymbolInfo {
     public void setValue(Object value) {
         this.value = value;
     }
+    public String getValueType() {
+        return valueType;
+    }
+    public void setValueType(String valueType) {
+        this.valueType = valueType;
+    }
+    
 
 }
 

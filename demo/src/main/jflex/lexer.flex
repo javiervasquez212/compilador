@@ -42,7 +42,7 @@ Comment = {TraditionalComment} | {EndOfLineComment} | {DocumentationComment}
 TraditionalComment   = "/_" [^_] ~"_/" | "/_" "_"+ "/"
 // Comment can be the last line of the file, without line terminator.
 EndOfLineComment     = "@" {InputCharacter}* {LineTerminator}?
-DocumentationComment = "/_" {CommentContent} "_"+ "/"
+DocumentationComment = "/" {CommentContent} "_"+ "/"
 CommentContent       = ( [^*] | \*+ [^/*] )*
 
 %state STRING

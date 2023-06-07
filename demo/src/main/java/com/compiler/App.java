@@ -13,6 +13,7 @@ public class App {
             Parser p = new Parser(lexer);
             p.parse();
             p.printSymbolTable();
+            p.action_obj.imprimirCod3D();
             System.out.println("Analisis realizado correctamente.");
         } catch(Exception e) {
             System.out.println("Ocurrió un error durante el análisis: " + e.getMessage());

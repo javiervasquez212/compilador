@@ -13,5 +13,10 @@ int prueba (float  d){
 int prueba2 (float  d){
 
     int e$
-    int a = prueba3() $
+    int a$
+    a= 32 + (2)$
+    if (2<6){
+        int l =45$
+    }
+
     }
